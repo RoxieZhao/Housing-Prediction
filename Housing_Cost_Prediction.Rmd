@@ -1,0 +1,213 @@
+---
+title: "Housing Cost Prediction Project"
+author: 'Jingyi Zhao'
+date: "10/05/2022"
+output: 
+  pdf_document:
+    latex_engine: xelatex
+    extra_dependencies: ["fontspec"]
+    keep_tex: true
+    fig_caption: true
+    fig_width: 6
+    fig_height: 4
+    dpi: 72
+---
+Using the data set kc_house_data.csv, build a model to predict housing cost. 
+```{r}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  fig.width = 6,
+  fig.height = 4,
+  dpi = 72,
+  dev = 'cairo_pdf'
+)
+
+```
+
+```{r}
+setwd("/Users/zhaojingyi/MAS432")
+df=read.csv("kc_house_data.csv")
+summary(df)
+```
+```{r results= "hide"}
+library(leaps)
+BSR = regsubsets(price~bedrooms+bathrooms+sqft_living+sqft_lot+floors+waterfront+view+condition+grade+sqft_above+sqft_basement+yr_built+yr_renovated+zipcode+lat+long+sqft_living15+sqft_lot15, data =df)
+plot(BSR)
+plot(BSR, scale = "adjr2")
+```
+Which variables are in the best subset?
+*bedrooms, sqft_living, waterfront, view, grade,yr_renovated, lat, long, sqft_living15*
+
+Use R to the find the number of variables in best subsets.
+```{r}
+s= summary(BSR)
+#s$adjr2
+which.max(s$adjr2)
+```
+Get a summary of the best subsets result.
+```{r}
+reg=lm(price~bedrooms+sqft_living+ waterfront+view+grade+yr_renovated+lat+long+sqft_living15,data=df)
+summary(reg)
+```
+```{r}
+df1= subset(df, select=c('bedrooms', 'sqft_living', 'waterfront', 'view', 'grade','yr_renovated', 'lat', 'long', 'sqft_living15'))
+```
+Find a correlation plot between the variables within the data subset(bedrooms, sqft_living, waterfront, view, grade,yr_renovated, lat, long, sqft_living15)
+```{r}
+library(corrplot)          
+M<-cor(df1)
+c=cor(M)
+corrplot(M)
+```
+
+
+#Generate a scatterplot matrix from the variables within the data subset
+```{r}
+plot(df1)
+```
+
+
+```{r}
+barplot(df$bedrooms, xlab = "bedrooms", ylab = "Frequency",
+main = "Barplot of symboling Frequencies")
+barplot(df$sqft_living, xlab = "sqft_living", ylab = "Frequency",
+main = "Barplot of symboling Frequencies")
+barplot(df$waterfront, xlab = "waterfront", ylab = "Frequency",
+main = "Barplot of symboling Frequencies")
+barplot(df$view, xlab = "view", ylab = "Frequency",
+main = "Barplot of symboling Frequencies")
+barplot(df$grade, xlab = "grade", ylab = "Frequency",
+main = "Barplot of symboling Frequencies")
+barplot(df$yr_renovated, xlab = "yr_renovated", ylab = "Frequency",
+main = "Barplot of symboling Frequencies")
+barplot(df$lat, xlab = "lat", ylab = "Frequency",
+main = "Barplot of symboling Frequencies")
+barplot(df$long, xlab = "long", ylab = "Frequency",
+main = "Barplot of symboling Frequencies")
+barplot(df$sqft_living15, xlab = "sqft_living15", ylab = "Frequency",
+main = "Barplot of symboling Frequencies")
+```
+
+## Construct a scatterplot and histogram of the residuals for the Full model
+```{r}
+plot(reg,which=1)
+hist(reg$residuals, xlab = "Residuals")
+library(car)
+boxCox(reg)
+```
+Since lambda is nearest to 0, use log to transfrom
+## BoxCox (Response variable transformation)
+```{r}
+regnew = lm(log(price)~bedrooms+sqft_living+ waterfront+view+grade+yr_renovated+lat+long+sqft_living15,data=df)
+summary(regnew)
+```
+#Checking normality
+```{r}
+library(ggplot2)
+par(mfrow= c(2,2))
+qqnorm(df$bedrooms)
+qqline(df$bedrooms)
+qqnorm(df$sqft_living)
+qqline(df$sqft_living)
+qqnorm(df$waterfront)
+qqline(df$waterfront)
+qqnorm(df$view)
+qqline(df$view)
+qqnorm(df$grade)
+qqline(df$grade)
+qqnorm(df$yr_renovated)
+qqline(df$yr_renovated)
+qqnorm(df$lat)
+qqline(df$lat)
+qqnorm(df$long)
+qqline(df$long)
+qqnorm(df$sqft_living15)
+qqline(df$sqft_living15)
+```
+#Comparison with original and tranformed
+```{r results= "hide"}
+par(mfrow= c(2,2))
+hist(df$bedrooms, main = "Histogram of (bedrooms)", xlab = "(bedrooms)")
+hist(log(df$bedrooms), main = "Histogram of log(bedrooms)", xlab = "log(bedrooms)") 
+hist(df$sqft_living, main = "Histogram of (sqft_living)", xlab = "(sqft_living)")
+hist(log(df$sqft_living), main = "Histogram of log(sqft_living)", xlab = "log(sqft_living)") 
+hist(df$waterfront, main = "Histogram of (waterfront)", xlab = "(waterfront)")
+hist(log(df$waterfront), main = "Histogram of log(waterfront)", xlab = "log(waterfront)") 
+hist(df$view, main = "Histogram of (view)", xlab = "(view)")
+hist(log(df$view), main = "Histogram of log(view)", xlab = "log(view)") 
+hist(df$grade, main = "Histogram of (grade)", xlab = "(grade)")
+hist(log(df$grade), main = "Histogram of log(grade)", xlab = "log(grade)") 
+hist(df$yr_renovated, main = "Histogram of (yr_renovated)", xlab = "(yr_renovated)")
+hist(log(df$yr_renovated), main = "Histogram of log(yr_renovatedt)", xlab = "log(yr_renovated)") 
+hist(df$lat, main = "Histogram of (lat)", xlab = "(lat)")
+hist(log(df$lat), main = "Histogram of log(lat)", xlab = "log(lat)")
+hist(df$sqft_living15, main = "Histogram of (sqft_living15)", xlab = "(sqft_living15)")
+hist(log(df$sqft_living15), main = "Histogram of log(sqft_living15)", xlab = "log(sqft_living15)")
+```
+
+
+```{r}
+cooks<-cooks.distance(regnew)
+plot(cooks,main="cook's distance for price")
+```
+
+```{r}
+regnew2 = lm(log(df$price) ~bedrooms+sqft_living+ waterfront+view+grade+yr_renovated+lat+long+sqft_living15 , data = df)
+summary(regnew2)
+```
+```{r}
+par(mfrow= c(2,2))
+reg1=lm(price~bedrooms,data=df)
+plot(reg1,which=1)
+plot(price~bedrooms,data=df)
+abline(reg1, col = "red")
+reg2=lm(price~sqft_living,data=df)
+plot(reg2,which=1)
+plot(price~sqft_living,data=df)
+abline(reg2, col = "red")
+reg3=lm(price~waterfront,data=df)
+plot(reg3,which=1)
+plot(price~waterfront,data=df)
+abline(reg3, col = "red")
+reg4=lm(price~view,data=df)
+plot(reg4,which=1)
+plot(price~view,data=df)
+abline(reg4, col = "red")
+reg5=lm(price~grade,data=df)
+plot(reg5,which=1)
+plot(price~grade,data=df)
+abline(reg5, col = "red")
+reg6=lm(price~yr_renovated,data=df)
+plot(reg6,which=1)
+plot(price~yr_renovated,data=df)
+abline(reg6, col = "red")
+reg7=lm(price~lat,data=df)
+plot(reg7,which=1)
+plot(price~lat,data=df)
+abline(reg7, col = "red")
+reg8=lm(price~long,data=df)
+plot(reg8,which=1)
+plot(price~long,data=df)
+abline(reg8, col = "red")
+reg9=lm(price~sqft_living15,data=df)
+plot(reg9,which=1)
+plot(price~sqft_living15,data=df)
+abline(reg9, col = "red")
+```
+```{r}
+knitr::opts_chunk$set(dev = 'cairo_pdf')
+```
+```{r}
+compress_pdf <- function(input_file, output_file) {
+  gs_cmd <- sprintf(
+    "gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dQUIET -dBATCH -sOutputFile=%s %s",
+    output_file, input_file
+  )
+  system(gs_cmd)
+}
+
+# Compress the knitted PDF
+compress_pdf("FinalProject.pdf", "FinalProject_compressed.pdf")
+
+```
+
